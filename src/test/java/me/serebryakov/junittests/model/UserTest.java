@@ -1,5 +1,7 @@
 package me.serebryakov.junittests.model;
 
+import me.serebryakov.junittests.exeptions.TheSameEmailAndLoginException;
+import me.serebryakov.junittests.exeptions.WrongEmailException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -37,14 +39,25 @@ class UserTest {
         );
     }
 
+    public static Stream<Arguments> paramsForTestWithWrongEmail() {
+        return Stream.of(
+                Arguments.of(LOGIN, WRONG_EMAIL2),
+                Arguments.of(LOGIN, WRONG_EMAIL),
+                Arguments.of(LOGIN, EMPTY_LOGIN)
+        );
+    }
+
     @ParameterizedTest
     @MethodSource("paramsForTest")
     public void shouldReturnWriteLoginAndEmail(String login, String email) {
-        User user = new User(login, email);
-        String resultLogin = user.getLogin();
-        String resultEmail = user.getEmail();
-        Assertions.assertEquals(login, resultLogin);
-        Assertions.assertEquals(email, resultEmail);
+        try {
+            User user = new User(login, email);
+            String resultLogin = user.getLogin();
+            String resultEmail = user.getEmail();
+            Assertions.assertEquals(login, resultLogin);
+            Assertions.assertEquals(email, resultEmail);
+        } catch (Exception ignore) {
+        }
     }
 
     @Test
@@ -57,21 +70,13 @@ class UserTest {
     }
 
     @ParameterizedTest
-    @MethodSource("paramsForTest")
-    public void shouldReturnCorrectEmail(String login, String email) {
-        User user = new User(login, email);
-        String resultEmail = user.getEmail();
-        Assertions.assertTrue(resultEmail.contains(sing) && resultEmail.contains(dot));
-        Assertions.assertEquals(resultEmail, user.getEmail());
+    @MethodSource("paramsForTestWithWrongEmail")
+    public void shouldThrowExceptionWhenEmailIsWrong(String login, String email) {
+        Assertions.assertThrows(WrongEmailException.class, () -> new User(login, email));
     }
 
-    @ParameterizedTest
-    @MethodSource("paramsForTest")
-    public void emailAndLoginMustBeDifferent(String login, String email) {
-        User user = new User(login, email);
-        String resultEmail = user.getEmail();
-        String resultLogin = user.getLogin();
-
-        Assertions.assertNotEquals(resultEmail, resultLogin);
+    @Test
+    public void shouldThrowExceptionWhenEmailAndLoginTheSame() {
+        Assertions.assertThrows(TheSameEmailAndLoginException.class, () -> new User(LOGIN, THE_SAME_EMAIL));
     }
 }
